@@ -4,19 +4,21 @@
     "description": "Serveur pour Twilio Media Streams avec IA",
     "main": "server.js",
     "scripts": {
-        "start": "node server.js",
+        "start": "ts-node ./server.ts",
         "build": "echo 'No build needed for backend'"
     },
     "dependencies": {
         "express": "^4.17.1",
         "openai": "^4.93.0",
-        "ws": "^8.15.1"
+        "ws": "^8.15.1",
+        "ts-node": "^10.9.2"
     },
     "engines": {
         "node": ">=16.0.0"
     },
     "devDependencies": {
         "@vitejs/plugin-react-swc": "^3.8.1",
+        "typescript": "^5.8.3",
         "vite": "^6.2.6"
     }
 }
