@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { WebSocketServer } from 'ws';
 import type { ViteDevServer } from 'vite';
-import { componentTagger } from "lovable-tagger";
 
 // Import du service Twilio Stream
 import { TwilioStreamService } from './src/services/twilioStreamService';
@@ -134,7 +133,6 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' && componentTagger(),
     websocketPlugin()
   ].filter(Boolean),
   resolve: {
