@@ -1,6 +1,6 @@
 import { WebhookHandler } from '../services/webhookHandler';
 
-// Fonction pour gérer les webhooks Twilio
+// Cette fonction serait idéalement déployée sur un serveur ou une fonction edge
 export async function handleTwilioWebhook(request: Request) {
   try {
     console.log("Webhook Twilio reçu", request.url);
@@ -49,7 +49,7 @@ export async function handleTwilioWebhook(request: Request) {
     console.log("URLs configurées - Webhook:", webhookUrl);
     console.log("URLs configurées - Stream:", streamUrl);
     
-    // Récupérer les options depuis l'environnement
+    // Récupérer les options depuis l'environnement ou un autre stockage sécurisé
     const options = {
       openAIApiKey: process.env.OPENAI_API_KEY || "your-openai-api-key",
       elevenLabsApiKey: process.env.ELEVENLABS_API_KEY || "your-elevenlabs-api-key",
@@ -57,7 +57,7 @@ export async function handleTwilioWebhook(request: Request) {
       openAIModel: process.env.OPENAI_MODEL || "gpt-4o-mini",
       callbackUrl: webhookUrl,
       streamUrl: streamUrl,
-      useStreaming: true // Activé pour utiliser le streaming
+      useStreaming: true // Activé pour utiliser le flux bidirectionnel
     };
     
     // Traiter le webhook

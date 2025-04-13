@@ -228,41 +228,64 @@ export class TwilioStreamService {
       
       const { conversations, config } = streamData;
       
-      // Dans une implémentation réelle, nous utiliserions Whisper ou un autre service STT
-      // Pour l'instant, on simule avec un message statique ou une transcription basique
-      
-      // TODO: Remplacer par l'appel API Whisper pour la transcription
-      // Simuler la transcription audio (à remplacer par un vrai STT)
-      const userMessage = "Bonjour, j'aimerais obtenir des informations sur vos services.";
-      console.log(`Transcription audio simulée: "${userMessage}"`);
-      
-      // Ajouter le message de l'utilisateur à la conversation
-      conversations.push({ role: "user", content: userMessage });
-      
-      // Obtenir la réponse de l'IA via API OpenAI
-      const aiResponse = await OpenAIService.chat(
-        config.openAIApiKey,
-        conversations,
-        config.openAIModel
-      );
-      
-      console.log(`Réponse IA générée: "${aiResponse}"`);
-      
-      // Ajouter la réponse de l'IA à la conversation
-      conversations.push({ role: "assistant", content: aiResponse });
-      
-      // Mettre à jour la conversation dans le stream
-      this.activeStreams.set(streamSid, { 
-        ...streamData, 
-        conversations 
+      // Concaténer tous les buffers audio en un seul
+      let combinedLength = 0;
+      audioBuffers.forEach(buffer => {
+        combinedLength += buffer.length;
       });
       
-      // Générer et envoyer l'audio
-      await this.generateAndSendAudioResponse(
-        streamSid,
-        aiResponse,
-        sendAudioResponse
-      );
+      const combinedBuffer = new Uint8Array(combinedLength);
+      let offset = 0;
+      
+      audioBuffers.forEach(buffer => {
+        combinedBuffer.set(buffer, offset);
+        offset += buffer.length;
+      });
+      
+      // Convertir le tableau Uint8Array en Blob pour l'API Whisper
+      const audioBlob = new Blob([combinedBuffer], { type: 'audio/wav' });
+      
+      try {
+        // Transcrire l'audio en utilisant l'API Whisper d'OpenAI
+        console.log("Transcription de l'audio via Whisper...");
+        const userMessage = await OpenAIService.transcribeAudio(
+          config.openAIApiKey,
+          audioBlob,
+          {
+            model: "gpt-4o-transcribe",
+            language: "fr",
+            prompt: "Le locuteur parle français. Transcrivez avec précision."
+          }
+        );
+        
+        console.log(`Transcription Whisper: "${userMessage}"`);
+        
+        if (userMessage.trim()) {
+          // Ajouter le message de l'utilisateur à la conversation
+          conversations.push({ role: "user", content: userMessage });
+          
+          // Obtenir la réponse de l'IA via API OpenAI
+          const aiResponse = await OpenAIService.chat(
+            config.openAIApiKey,
+            conversations,
+            config.openAIModel
+          );
+          
+          console.log(`Réponse IA générée: "${aiResponse}"`);
+          
+          // Ajouter la réponse de l'IA à la conversation
+          conversations.push({ role: "assistant", content: aiResponse });
+          
+          // Générer et envoyer l'audio
+          await this.generateAndSendAudioResponse(
+            streamSid,
+            aiResponse,
+            sendAudioResponse
+          );
+        }
+      } catch (error) {
+        console.error("Erreur lors de la transcription ou de la génération de réponse:", error);
+      }
       
     } catch (error) {
       console.error("Erreur lors du traitement de l'audio:", error);
@@ -286,29 +309,35 @@ export class TwilioStreamService {
       const { config } = streamData;
       
       // Optimiser le texte pour une meilleure prononciation
-      const optimizedText = SpeechPunctuationService.optimizePunctuation(text);
+      const optimizedText = SpeechPunctuationService.optimizeForPhoneCall(text);
       
-      // Convertir la réponse en audio avec ElevenLabs
-      const audioResponse = await ElevenLabsService.textToSpeech(
-        config.elevenLabsApiKey,
-        {
-          text: optimizedText,
-          voice_id: config.voiceId,
-          model_id: "eleven_multilingual_v2"
+      console.log(`Génération audio avec ElevenLabs: "${optimizedText}"`);
+      
+      try {
+        // Convertir la réponse en audio avec ElevenLabs
+        const audioResponse = await ElevenLabsService.textToSpeech(
+          config.elevenLabsApiKey,
+          {
+            text: optimizedText,
+            voice_id: config.voiceId,
+            model_id: "eleven_multilingual_v2"
+          }
+        );
+        
+        if (!audioResponse.audioBuffer) {
+          throw new Error("Aucun buffer audio reçu d'ElevenLabs");
         }
-      );
-      
-      // Dans une implémentation réelle, nous convertirions l'URL audio en données binaires
-      // puis encoderions en base64 pour envoyer à Twilio
-      
-      // TODO: Remplacer par la récupération et conversion réelle de l'audio
-      // Simuler une réponse audio base64
-      const simulatedBase64Audio = "UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-      
-      // Envoyer l'audio au client Twilio
-      await sendAudioResponse(simulatedBase64Audio, streamSid);
-      
-      console.log(`Réponse audio envoyée pour le stream ${streamSid}`);
+        
+        // Convertir l'audio en base64
+        const audioBase64 = await ElevenLabsService.audioToBase64(audioResponse.audioBuffer);
+        
+        // Envoyer l'audio au client Twilio
+        await sendAudioResponse(audioBase64, streamSid);
+        
+        console.log(`Réponse audio envoyée pour le stream ${streamSid}`);
+      } catch (error) {
+        console.error("Erreur lors de la génération audio:", error);
+      }
       
     } catch (error) {
       console.error("Erreur lors de la génération de la réponse audio:", error);

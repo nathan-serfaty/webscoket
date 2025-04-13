@@ -11,7 +11,7 @@ export class WebhookHandler {
       voiceId: string;
       openAIModel: string;
       callbackUrl?: string;
-      streamUrl?: string; // URL du WebSocket pour le streaming
+      streamUrl?: string; // Ajout de l'URL du WebSocket pour le streaming
       useStreaming?: boolean; // Option pour activer le streaming
     }
   ): Promise<AgentWebhookResponse> {
