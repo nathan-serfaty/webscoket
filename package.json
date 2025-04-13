@@ -1,0 +1,19 @@
+{
+    "name": "twilio-media-streams",
+    "version": "1.0.0",
+    "description": "Serveur pour Twilio Media Streams avec IA",
+    "main": "server.js",
+    "scripts": {
+      "start": "node server.js",
+      "build": "vite build"
+    },
+    "dependencies": {
+      "express": "^4.17.1",
+      "ws": "^8.15.1",
+      "openai": "^4.93.0"
+    },
+    "engines": {
+      "node": ">=16.0.0"
+    }
+  }
+  
